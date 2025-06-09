@@ -22,7 +22,7 @@ from aqt.qt import QAction, QMenu, QKeySequence
 from aqt.importing import ImportDialog
 
 try:
-    from .remote_decks.main import addNewDeck
+    from .remote_decks.main import addNewDeck, addNewAirtableDeck
     from .remote_decks.main import syncDecks as sDecks
     from .remote_decks.main import removeRemoteDeck as rDecks
     from .remote_decks.libs.org_to_anki.utils import getAnkiPluginConnector as getConnector
@@ -71,6 +71,21 @@ def syncDecks():
         showInfo("Synchronization complete")
         ankiBridge.stopEditing()
 
+def addAirtableDeck():
+    try:
+        ankiBridge = getConnector()
+        ankiBridge.startEditing()
+        addNewAirtableDeck()
+    except Exception as e:
+        errorMessage = str(e)
+        showInfo(errorTemplate.format(errorMessage))
+        if ankiBridge.getConfig().get("debug", False):
+            import traceback
+            trace = traceback.format_exc()
+            showInfo(str(trace))
+    finally:
+        ankiBridge.stopEditing()
+
 def removeRemote():
     try:
         ankiBridge = getConnector()
@@ -92,19 +107,28 @@ if mw is not None:
     mw.form.menuTools.addMenu(remoteDecksSubMenu)
 
     # Añadir acción para "Agregar nuevo mazo remoto"
-    remoteDeckAction = QAction("Add New sheets2anki Remote Deck", mw)
+    remoteDeckAction = QAction("Add New Google Sheets Deck", mw)
     remoteDeckAction.setShortcut(QKeySequence("Ctrl+Shift+A"))
     qconnect(remoteDeckAction.triggered, addDeck)
     remoteDecksSubMenu.addAction(remoteDeckAction)
 
+    # Añadir acción para "Agregar nuevo mazo de Airtable"
+    airtableDeckAction = QAction("Add New Airtable Deck", mw)
+    airtableDeckAction.setShortcut(QKeySequence("Ctrl+Shift+T"))
+    qconnect(airtableDeckAction.triggered, addAirtableDeck)
+    remoteDecksSubMenu.addAction(airtableDeckAction)
+
+    # Separator
+    remoteDecksSubMenu.addSeparator()
+
     # Acción para "Sincronizar mazos remotos"
-    syncDecksAction = QAction("Sync Decks", mw)
+    syncDecksAction = QAction("Sync All Decks", mw)
     syncDecksAction.setShortcut(QKeySequence("Ctrl+Shift+S"))
     qconnect(syncDecksAction.triggered, syncDecks)
     remoteDecksSubMenu.addAction(syncDecksAction)
 
     # Acción para "Eliminar mazo remoto"
-    removeRemoteDeck = QAction("Disconnect a remote Deck", mw)
+    removeRemoteDeck = QAction("Disconnect a Remote Deck", mw)
     removeRemoteDeck.setShortcut(QKeySequence("Ctrl+Shift+D"))
     qconnect(removeRemoteDeck.triggered, removeRemote)
     remoteDecksSubMenu.addAction(removeRemoteDeck)
